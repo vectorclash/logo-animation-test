@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logo Animation Test - 300x250</title>
+    <style>
+        :root {
+            --sprite-width: 3000px;
+            --sprite-height: 2400px;
+            --columns: 5;
+            --rows: 4;
+            --frame-width: calc(var(--sprite-width) / var(--columns));
+            --frame-height: calc(var(--sprite-height) / var(--rows));
+            --sprite-top: -211px;
+            --sprite-left: 118px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f0f0f0;
+        }
+
+        #banner {
+            position: relative;
+            width: var(--banner-width, 300px);
+            height: var(--banner-height, 250px);
+            background: #009FDB;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        #masked-image-container {
+            position: absolute;
+            width: var(--banner-width, 300px);
+            height: var(--banner-height, 250px);
+            top: 0;
+            left: 0;
+            clip-path: circle(0px at 50% 50%);
+            opacity: 0;
+            overflow: hidden;
+            will-change: clip-path, opacity;
+        }
+
+        #masked-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            object-fit: cover;
+            object-position: right center;
+            transform-origin: right center;
+            will-change: transform;
+        }
+
+        /* Sprite Sheet Container - sized to match our 42px globe */
+        .spriteWrapper {
+            position: absolute;
+            opacity: 0;
+            width: 42px;
+            height: 42px;
+            overflow: visible;
+            transform-origin: center center;
+        }
+
+        .sprite {
+            position: absolute;
+            opacity: 1;
+            width: 100%;
+            height: 100%;
+            background: url('./original/images/spriteSheetIntro.svg') no-repeat;
+            background-size: 500% 400%;
+            background-position: 0% 0%;
+            will-change: background-position;
+            top: 0;
+            left: 0;
+            border-radius: 50%;
+        }
+
+        #logo-mask {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 50%;
+            opacity: 0;
+            will-change: transform, opacity;
+            transform-origin: top left;
+        }
+
+        .globe-ring {
+            fill: #ffffff;
+        }
+
+        #controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 1000;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #ff5252;
+        }
+
+        button:last-child {
+            margin-bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="banner">
+        <!-- Sprite Sheet Animation -->
+        <div id="logoBox" class="spriteWrapper">
+            <div class="sprite intro" id="intro"></div>
+        </div>
+
+        <!-- Static Globe SVG for Morphing - AT&T Globe with 5 rings -->
+        <svg id="globe-svg" viewBox="0 0 904.88 899.33" style="position: absolute; opacity: 0;">
+            <!-- 5 globe ring paths that will morph to circle -->
+            <g id="globe-rings">
+                <path class="globe-ring" d="M431.67.85c69.23-8.49,354.04,47.33,252.01,123C480.95,266.38-159.78,99.88,431.67.85Z"/>
+                <path class="globe-ring" d="M155.67,108.85c-65.96,204.08,295.86,154.03,412.99,128,68.15-27.56,167.93-41.8,186.01-121,33.48,33.11,100.83,88.81,54.99,140-119.64,136.17-414.89,100.74-575.99,54.01-128.36-39.9-214.49-92.07-78-201.01h0Z"/>
+                <path class="globe-ring" d="M856.67,255.85C1065.84,616.37,149.83,565.33,29.68,391.86c-34.75-32.41.88-92.44,12.99-129.01-13.38,128.23,157.69,164.81,256,175.01,138.01,16.35,514.89-29.49,558.01-182h-.01Z"/>
+                <path class="globe-ring" d="M899.67,429.85c78.99,373.17-764.55,336.61-888,106.01-6.05-22.34-17.59-65.66-8-89.01,17.95,91.42,100.24,125.92,183,156,166.95,70.74,622.21-9.31,713-173h0Z"/>
+                <path class="globe-ring" d="M870.67,615.85c-94.18,285.6-644.9,276.32-811,51.02-2.36-4.5-13.47-15.57-9.01-18.02,33.31,41.25,75.11,68.35,127,86,205.89,78.22,542.39,51.79,693-119h.01Z"/>
+                <path class="globe-ring" d="M742.67,788.85c-134.82,141.36-409.84,146.75-562,18,166.89,82.25,409.98,75.81,562-18Z"/>
+            </g>
+            <!-- Target: full circle -->
+            <path id="circle-target" d="M 904,450 C 904,699.705 701.705,900 452,900 202.295,900 0,699.705 0,450 0,200.295 202.295,0 452,0 701.705,0 904,200.295 904,450 Z" fill="#ffffff" style="display: none;"/>
+        </svg>
+
+        <!-- Solid Circle (for final state) -->
+        <div id="logo-mask"></div>
+
+        <!-- Image Container -->
+        <div id="masked-image-container">
+            <img id="masked-image" src="https://picsum.photos/300/250" alt="Masked Image">
+        </div>
+    </div>
+
+    <div id="controls">
+        <button id="playBtn">Play Animation</button>
+        <button id="resetBtn">Reset</button>
+    </div>
+
+    <!-- GSAP from CDN (latest version with all plugins) -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14/dist/MorphSVGPlugin.min.js"></script>
+
+    <script>
+        // Register MorphSVG plugin
+        gsap.registerPlugin(MorphSVGPlugin);
+    </script>
+
+    <script>
+        // ========================================
+        // SPRITE ANIMATION HELPER FUNCTION
+        // ========================================
+
+        function getCssVariableValue(varName) {
+            return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+        }
+
+        function parseCssValue(value) {
+            return parseFloat(value.replace('px', ''));
+        }
+
+        function animateSprite({
+            spriteSelector,
+            columns,
+            rows,
+            duration,
+            repeat
+        }) {
+            let spriteTimeline = gsap.timeline({
+                repeat: repeat
+            });
+
+            spriteTimeline.set(spriteSelector, {
+                backgroundPosition: '0% 0%'
+            });
+
+            for (let row = 0; row < rows; row++) {
+                const rowY = (row / (rows - 1)) * 100;
+
+                spriteTimeline.to(spriteSelector, {
+                    duration: duration,
+                    backgroundPosition: `100% ${rowY}%`,
+                    ease: `steps(${columns - 1})`
+                });
+
+                if (row < rows - 1) {
+                    const nextY = ((row + 1) / (rows - 1)) * 100;
+                    spriteTimeline.set(spriteSelector, {
+                        backgroundPosition: `0% ${nextY}%`
+                    });
+                }
+            }
+
+            return spriteTimeline;
+        }
+
+        // ========================================
+        // ANIMATION CONFIGURATION VARIABLES
+        // ========================================
+        //
+        // HOW TO ADAPT FOR DIFFERENT BANNER SIZES:
+        // 1. Change bannerWidth and bannerHeight
+        // 2. Adjust logoEndSize, logoEndX, logoEndY for final position
+        // 3. logoStartSize and centering are automatic!
+        // 4. svgGlobeScale should stay the same (0.91) unless you change spritesheets
+        //
+        // ========================================
+
+        const CONFIG = {
+            // ========================================
+            // BANNER DIMENSIONS
+            // ========================================
+            // Change these for different banner sizes (728x90, 160x600, 300x600, etc.)
+            bannerWidth: 300,
+            bannerHeight: 250,
+
+            // ========================================
+            // LOGO START STATE (centered, small)
+            // ========================================
+            logoStartSize: 42,  // Container size for the sprite/globe
+
+            // Auto-calculated centering (automatically centers based on banner size)
+            get logoStartX() { return (this.bannerWidth - this.logoStartSize) / 2; },
+            get logoStartY() { return (this.bannerHeight - this.logoStartSize) / 2; },
+
+            // ========================================
+            // ALIGNMENT ADJUSTMENT
+            // ========================================
+            // The spritesheet has padding around the globe, so the morph SVG needs to be scaled down to match
+            // This scale applies to: morph SVG, solid circle, and image mask
+            // Adjust this ONE value to align all elements with the spritesheet (0.0 - 1.0)
+            // Should stay at 0.91 unless you change to a different spritesheet
+            svgGlobeScale: 0.91,
+
+            // ========================================
+            // LOGO END STATE (scaled up and positioned)
+            // ========================================
+            // Adjust these values for where the logo should end up for this banner size
+            logoEndSize: 560,   // Final container size
+            logoEndX: 150,      // Final X position
+            logoEndY: -188,     // Final Y position
+
+            // Image scaling
+            imageStartScale: 1.5,   // Start 10% larger
+            imageEndScale: 1.0,     // End at 100%
+
+            // Sprite sheet parameters
+            sprite: {
+                width: parseCssValue(getCssVariableValue('--sprite-width')),
+                height: parseCssValue(getCssVariableValue('--sprite-height')),
+                columns: parseInt(getCssVariableValue('--columns'), 10),
+                rows: parseInt(getCssVariableValue('--rows'), 10),
+                frameDuration: 0.2
+            },
+
+            // Animation timing (in seconds)
+            timing: {
+                initialDelay: 0.5,          // Delay before animation starts
+                spriteAnimDuration: 0.8,    // Total duration of sprite animation (0.2 * 4 rows)
+                linesAnimDuration: 0.7,     // Duration for SVG lines stroke animation
+                globeFillDuration: 0.4,     // Duration for globe to fill into circle
+                circleHoldDelay: 0.3,       // Delay after fill before scale/move
+                scaleAndMoveDuration: 1.2,  // Duration for scale + move (simultaneous)
+                imageFadeInDuration: 1,     // Duration for image fade in
+                imageFadeInDelay: 0.3,      // When to start fade (relative to scale/move)
+                imageScaleDuration: 1.2     // Duration for image scale down
+            },
+
+            // Easing functions
+            easing: {
+                globeFill: "power2.inOut",
+                scaleAndMove: "power3.inOut",
+                imageFade: "power2.in",
+                imageScale: "power2.out",
+                linesStroke: "power2.out"
+            }
+        };
+
+        // ========================================
+        // SETUP
+        // ========================================
+
+        // Set CSS variables for banner dimensions
+        document.documentElement.style.setProperty('--banner-width', `${CONFIG.bannerWidth}px`);
+        document.documentElement.style.setProperty('--banner-height', `${CONFIG.bannerHeight}px`);
+
+        const logoBox = document.getElementById('logoBox');
+        const globeSvg = document.getElementById('globe-svg');
+        const globeRings = document.querySelectorAll('.globe-ring');
+        const circleTarget = document.getElementById('circle-target');
+        const logo = document.getElementById('logo-mask');
+        const maskedImageContainer = document.getElementById('masked-image-container');
+        const maskedImage = document.getElementById('masked-image');
+        const playBtn = document.getElementById('playBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        let timeline;
+
+        // Initialize logo to starting position
+        function initializeElements() {
+            // Set initial state for sprite sheet container (same position as globe)
+            gsap.set(logoBox, {
+                opacity: 1,
+                x: CONFIG.logoStartX,
+                y: CONFIG.logoStartY
+            });
+
+            // Calculate scaled SVG globe size and centering offset
+            const scaledGlobeSize = CONFIG.logoStartSize * CONFIG.svgGlobeScale;
+            const globeOffset = (CONFIG.logoStartSize - scaledGlobeSize) / 2;
+
+            // Position globe SVG at center (hidden initially), scaled and centered within the container
+            gsap.set(globeSvg, {
+                x: CONFIG.logoStartX + globeOffset,
+                y: CONFIG.logoStartY + globeOffset,
+                width: scaledGlobeSize,
+                height: scaledGlobeSize,
+                opacity: 0
+            });
+
+            // Reset all globe rings to their original shapes
+            globeRings.forEach((ring, index) => {
+                gsap.set(ring, {
+                    morphSVG: ring
+                });
+            });
+
+            // Position solid circle at center (hidden initially)
+            // The solid circle should match the scaled globe size
+            gsap.set(logo, {
+                width: scaledGlobeSize,
+                height: scaledGlobeSize,
+                x: CONFIG.logoStartX + globeOffset,
+                y: CONFIG.logoStartY + globeOffset,
+                opacity: 0,
+                scale: 1
+            });
+
+            // Start the masked image with the same size as the scaled globe
+            const startCenterX = CONFIG.logoStartX + CONFIG.logoStartSize / 2;
+            const startCenterY = CONFIG.logoStartY + CONFIG.logoStartSize / 2;
+
+            const startClipPath = `circle(${scaledGlobeSize/2}px at ${startCenterX}px ${startCenterY}px)`;
+            console.log('Initial clip-path:', startClipPath);
+
+            gsap.set(maskedImageContainer, {
+                clipPath: startClipPath
+            });
+
+            gsap.set(maskedImage, {
+                scale: CONFIG.imageStartScale
+            });
+
+            console.log('Masked image container:', maskedImageContainer);
+            console.log('Computed clip-path:', window.getComputedStyle(maskedImageContainer).clipPath);
+        }
+
+        // ========================================
+        // ANIMATION TIMELINE
+        // ========================================
+
+        function createTimeline() {
+            // Create a new timeline
+            timeline = gsap.timeline({
+                paused: true,
+                onComplete: () => {
+                    console.log('Animation complete!');
+                }
+            });
+
+            // Step 1: Initial delay (sprite sits centered)
+            timeline.add('start')
+                .addLabel('spriteAnim', CONFIG.timing.initialDelay);
+
+            // Step 2: Play sprite sheet animation
+            const spriteAnim = animateSprite({
+                spriteSelector: '.sprite',
+                columns: CONFIG.sprite.columns,
+                rows: CONFIG.sprite.rows,
+                duration: CONFIG.sprite.frameDuration,
+                repeat: 0
+            });
+            timeline.add(spriteAnim, 'spriteAnim');
+
+            // Step 3: Switch from sprite to globe SVG instantly
+            timeline.addLabel('morph');
+
+            // Hide sprite immediately
+            timeline.set(logoBox, {
+                opacity: 0
+            }, 'morph');
+
+            // Show globe SVG immediately
+            timeline.set(globeSvg, {
+                opacity: 1
+            }, 'morph');
+
+            // Step 4: Morph all 5 globe rings into the circle simultaneously
+            // Using rotational type for more natural transitions
+            globeRings.forEach((ring, index) => {
+                timeline.to(ring, {
+                    morphSVG: {
+                        shape: circleTarget,
+                        smooth: { points: 80, redraw: true }
+                    },
+                    duration: 0.7,
+                    ease: 'power2.inOut'
+                }, 'morph');
+            });
+
+            // Step 5: Hold the circle briefly before scaling
+            timeline.addLabel('animate', `+=${CONFIG.timing.circleHoldDelay}`);
+
+            // Step 6: Scale AND move the globe SVG
+            // Calculate the final size considering the initial scale
+            const finalGlobeSize = CONFIG.logoEndSize * CONFIG.svgGlobeScale;
+            const finalGlobeOffset = (CONFIG.logoEndSize - finalGlobeSize) / 2;
+
+            timeline.to(globeSvg, {
+                x: CONFIG.logoEndX + finalGlobeOffset,
+                y: CONFIG.logoEndY + finalGlobeOffset,
+                width: finalGlobeSize,
+                height: finalGlobeSize,
+                duration: CONFIG.timing.scaleAndMoveDuration,
+                ease: CONFIG.easing.scaleAndMove
+            }, 'animate');
+
+            // Step 7: Simultaneously scale the masked image clip-path
+            // Use the scaled globe size to ensure alignment with the SVG
+            const finalCenterX = CONFIG.logoEndX + CONFIG.logoEndSize / 2;
+            const finalCenterY = CONFIG.logoEndY + CONFIG.logoEndSize / 2;
+            const finalRadius = finalGlobeSize / 2;
+
+            timeline.to(maskedImageContainer, {
+                clipPath: `circle(${finalRadius}px at ${finalCenterX}px ${finalCenterY}px)`,
+                duration: CONFIG.timing.scaleAndMoveDuration,
+                ease: CONFIG.easing.scaleAndMove
+            }, 'animate');
+
+            // Step 8: Fade in the container and scale down the image simultaneously
+            timeline.to(maskedImageContainer, {
+                opacity: 1,
+                duration: CONFIG.timing.imageFadeInDuration,
+                ease: CONFIG.easing.imageFade
+            }, `animate+=${CONFIG.timing.imageFadeInDelay}`)
+            .to(maskedImage, {
+                scale: CONFIG.imageEndScale,
+                duration: CONFIG.timing.imageScaleDuration,
+                ease: CONFIG.easing.imageScale
+            }, `<`);
+
+            return timeline;
+        }
+
+        // ========================================
+        // CONTROLS
+        // ========================================
+
+        function playAnimation() {
+            if (timeline) {
+                timeline.restart();
+            }
+        }
+
+        function resetAnimation() {
+            if (timeline) {
+                timeline.pause(0);
+            }
+            initializeElements();
+        }
+
+        // ========================================
+        // EVENT LISTENERS
+        // ========================================
+
+        playBtn.addEventListener('click', playAnimation);
+        resetBtn.addEventListener('click', resetAnimation);
+
+        // ========================================
+        // INITIALIZE
+        // ========================================
+
+        initializeElements();
+        timeline = createTimeline();
+
+        // Auto-play on load (optional - comment out if you don't want this)
+        setTimeout(() => {
+            playAnimation();
+        }, 500);
+    </script>
+</body>
+</html>
